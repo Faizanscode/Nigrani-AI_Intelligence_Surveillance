@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+temp/
+tmp/
+cache/
+
+# CCTV / generated data
+data/evidence/
+data/videos/
+data/face_registry.json
+data/fences.json
+uploads/
+evidence/
+snapshots/
+recordings/
+videos/
+outputs/
+dummy.mp4
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Models
+*.pt
+*.onnx
+*.engine
+*.weights
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
