@@ -1,0 +1,32 @@
+# Walkthrough: Step 9 - Loitering & Night Movement Detection
+
+I have successfully implemented Step 9 of the IBVAP system: **Loitering & Night Movement Detection**.
+
+## 1. Behavior Analysis Subsystem
+I created a new modular subsystem located at `ai_engine/behavior/`:
+- **`loitering_detector.py`**: Calculates the amount of time a person has been visible. If the time exceeds `LOITERING_TIME_THRESHOLD` (e.g. 30 seconds) and their total movement distance is under `LOITERING_DISTANCE_THRESHOLD`, it triggers a loitering event.
+- **`night_movement_detector.py`**: Monitors specific times (e.g. `NIGHT_START_TIME` to `NIGHT_END_TIME`). If motion (like a vehicle or person) is detected for at least `NIGHT_MOVEMENT_MIN_DURATION` with sufficient displacement, it triggers a night movement event.
+- **`engine.py`**: Manages state correlation between detection frames, keeping a historical position profile (using `TrackState`) for active objects to evaluate their behavior metrics.
+
+## 2. Event & Alert Engine Integration
+The `EventEngine` and `AlertManager` have been extended:
+- Registered the `events.behavior` topic to process behavior anomalies alongside standard virtual fence intrusions and ANPR logs.
+- Extracted readable alert messages based on event parameters:
+  - `CRITICAL / HIGH` severity.
+  - "Loitering Detected (Person for Xs)"
+  - "Night Movement Detected (Car)"
+
+## 3. Dashboard Integration
+The React Surveillance Dashboard was updated to seamlessly support behavior events:
+- **Websocket Support**: `events.behavior` are pushed over the WebSocket as `NEW_EVENT`, which means they dynamically appear on the live **Camera Viewer**.
+- **Live Detection Log**: Fixed object-class mapping to correctly print out `object_type` which ensures behavior logs show exactly what type of object triggered the detection.
+
+## 4. Testing
+Unit tests were written in `tests/test_behavior.py` simulating track persistence, time limits, and distance constraints to verify both detectors accurately issue (and cooldown) events.
+
+**Verification Results:**
+- `test_loitering_detector`: PASSED
+- `test_night_movement_detector`: PASSED
+
+## Next Steps
+You can start up both the backend and frontend again, and configure the camera to monitor for prolonged standing or after-hours vehicle/person movement.

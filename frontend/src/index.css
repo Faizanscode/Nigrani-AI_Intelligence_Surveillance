@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/* ── Nigrani AI – Command Center Theme ───────────────────────────── */
+:root {
+  /* Dark Mode (Default) */
+  --bg-base: #0a0f1a;
+  --bg-panel: #111827;
+  --bg-panel-alt: #0f172a;
+  --border-default: #1e293b;
+  --border-hover: #334155;
+  --border-highlight: #475569;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  
+  --status-green: #22c55e;
+  --status-red: #ef4444;
+  --status-amber: #f59e0b;
+  --status-blue: #3b82f6;
+  
+  --panel-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+}
+
+html[data-theme="light"] {
+  /* Light Mode */
+  --bg-base: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-panel-alt: #f1f5f9;
+  --border-default: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --border-highlight: #94a3b8;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  
+  --status-green: #16a34a;
+  --status-red: #dc2626;
+  --status-amber: #d97706;
+  --status-blue: #2563eb;
+  
+  --panel-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+@theme {
+  --color-base: var(--bg-base);
+  --color-panel: var(--bg-panel);
+  --color-panel-alt: var(--bg-panel-alt);
+  --color-default: var(--border-default);
+  --color-hover: var(--border-hover);
+  --color-highlight: var(--border-highlight);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+
+  --color-bg-base: var(--bg-base);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-panel-alt: var(--bg-panel-alt);
+  --color-border-default: var(--border-default);
+  --color-border-hover: var(--border-hover);
+  --color-border-highlight: var(--border-highlight);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  --color-status-green: var(--status-green);
+  --color-status-red: var(--status-red);
+  --color-status-amber: var(--status-amber);
+  --color-status-blue: var(--status-blue);
+  
+  --shadow-panel: var(--panel-shadow);
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* Compact scrollbars for command-center aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-highlight);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+}

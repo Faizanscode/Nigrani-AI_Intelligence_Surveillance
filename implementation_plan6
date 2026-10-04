@@ -1,0 +1,74 @@
+# Step 6: Event & Alert Engine
+
+## Goal Description
+Build a robust, decoupled Event and Alert Engine that consumes structured `IntrusionEvent` objects, deduplicates them, generates actionable `Alert` objects, and manages their lifecycles. This lays the foundation for real-time notifications and the future React dashboard without tightly coupling to the AI pipeline.
+
+> [!IMPORTANT]
+> **User Review Required**
+> 
+> * **Storage**: The plan uses an in-memory repository pattern (with bounds, e.g., 1000 events) for this prototype phase, as PostgreSQL integration typically happens alongside final persistence hardening. Is in-memory acceptable for this step?
+> * **Event Bus Integration**: `CameraPipeline` will publish `IntrusionEvent` directly to an asynchronous, in-memory `EventBus`, completely decoupling the analytics engine from the downstream event processing.
+
+## Proposed Changes
+
+### Configuration
+#### [MODIFY] `backend/app/core/config.py`
+- Add `ALERT_COOLDOWN_SECONDS = 10`
+- Add `MAX_IN_MEMORY_EVENTS = 1000`
+- Add `MAX_IN_MEMORY_ALERTS = 500`
+
+### Event Bus (Real-time Pub/Sub)
+#### [NEW] `backend/app/core/event_bus.py`
+- Create an `EventBus` class using `asyncio` queues or simple callback lists.
+- Support `publish(topic, payload)` and `subscribe(topic, callback)`.
+
+### Models & Repositories
+#### [NEW] `backend/app/models/alerts.py`
+- Create `Alert` Pydantic model (`alert_id`, `event_id`, `severity`, `status`, `message`, timestamps).
+#### [NEW] `backend/app/repositories/interfaces.py`
+- Define abstract base classes `IEventRepository` and `IAlertRepository`.
+#### [NEW] `backend/app/repositories/memory.py`
+- Implement `InMemoryEventRepository` and `InMemoryAlertRepository` with LRU or deque-based bounds to prevent memory leaks.
+
+### Engines & Managers
+#### [NEW] `backend/app/services/event_engine.py`
+- Create `EventEngine`.
+- Subscribes to the `EventBus` on the `VIRTUAL_FENCE_INTRUSION` topic.
+- Implements deduplication using a key: `f"{camera_id}_{fence_id}_{track_id}_{event_type}"`.
+- Defers to `AlertManager` to create alerts if the event passes deduplication and cooldown checks.
+#### [NEW] `backend/app/services/alert_manager.py`
+- Create `AlertManager` to handle alert creation and lifecycle transitions (NEW → ACKNOWLEDGED → RESOLVED / DISMISSED).
+- Generates dynamic messages like: `"Person crossed Restricted Border Zone"`.
+
+### Pipeline Integration
+#### [MODIFY] `ai_engine/pipeline.py`
+- Update `CameraPipeline` to inject the global `EventBus`.
+- When `FenceEngine` yields an `IntrusionEvent`, immediately call `event_bus.publish("events.intrusion", event)`.
+
+### APIs
+#### [NEW] `backend/app/api/events.py`
+- `GET /api/v1/events` (Pagination, filtering by camera/type/severity).
+#### [NEW] `backend/app/api/alerts.py`
+- `GET /api/v1/alerts`
+- `PATCH /api/v1/alerts/{alert_id}/acknowledge`
+- `PATCH /api/v1/alerts/{alert_id}/resolve`
+- `PATCH /api/v1/alerts/{alert_id}/dismiss`
+#### [MODIFY] `backend/app/main.py`
+- Include the new `events` and `alerts` routers.
+- Initialize `EventBus`, `EventEngine`, and `AlertManager` on startup.
+
+## Verification Plan
+### Automated Tests
+- Create `tests/test_event_engine.py`
+  - Valid event processing & alert generation.
+  - Deduplication logic (duplicate track ID within cooldown is ignored).
+  - Alert lifecycle (transitions: NEW -> ACK -> RESOLVED).
+  - Invalid state transitions (e.g. RESOLVED -> NEW fails).
+  - Repository storage bounds.
+  - API endpoint testing with FastAPI `TestClient`.
+
+### Manual Verification
+- Start the dummy camera API from Step 5.
+- Trigger an intrusion.
+- Check `GET /api/v1/alerts` to see the generated alert.
+- Call `PATCH /api/v1/alerts/{id}/acknowledge` and verify the status change.
