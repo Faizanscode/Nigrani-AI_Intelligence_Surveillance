@@ -4,16 +4,25 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     API_PORT: int = 8000
     API_HOST: str = "0.0.0.0"
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = "production"
     LOGGING_LEVEL: str = "INFO"
-    FRAME_QUEUE_SIZE: int = 2
+    FRAME_QUEUE_SIZE: int = 30
     PROCESS_FPS: int = 10
     
     YOLO_MODEL: str = "yolo11n.pt"
     YOLO_CONFIDENCE: float = 0.40
     YOLO_IOU: float = 0.45
-    YOLO_DEVICE: str = "cuda" if os.environ.get("USE_CPU", "0") == "0" else "cpu"
+    YOLO_DEVICE: str = "cpu"
     DETECTION_CLASSES: str = "person,car,motorcycle,bus,truck"
+
+    # Storage paths
+    DATA_DIR: str = "data"
+    VIDEOS_DIR: str = "data/videos"
+    EVIDENCE_DIR: str = "data/evidence"
+
+    # CORS & Security
+    FRONTEND_URL: str = "http://localhost:5173"
+    ALLOWED_ORIGINS: str = ""
     
     TRACKER_TYPE: str = "bytetrack"
     TRACKER_TRACK_BUFFER: int = 30

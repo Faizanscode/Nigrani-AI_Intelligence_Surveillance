@@ -6,12 +6,30 @@ import os
 
 from backend.app.api import cameras, health, fences, events, alerts, ws
 from backend.app.services.camera_manager import camera_manager
+from backend.app.core.config import settings
 from backend.app.core.logger import get_logger
 
 logger = get_logger("Main")
 
 # Ensure evidence directory exists
-os.makedirs("data/evidence", exist_ok=True)
+os.makedirs(settings.EVIDENCE_DIR, exist_ok=True)
+
+async def cleanup_evidence_task():
+    import asyncio, glob
+    while True:
+        try:
+            evidence_dir = settings.EVIDENCE_DIR
+            files = glob.glob(os.path.join(evidence_dir, "*.jpg"))
+            if len(files) > 500:
+                files.sort(key=os.path.getmtime)
+                for f in files[:-500]:
+                    try:
+                        os.remove(f)
+                    except Exception:
+                        pass
+        except Exception as e:
+            logger.error(f"Error in evidence cleanup: {e}")
+        await asyncio.sleep(300) # Run every 5 minutes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,25 +38,43 @@ async def lifespan(app: FastAPI):
     from backend.app.core.event_bus import event_bus
     loop = asyncio.get_running_loop()
     event_bus.set_main_loop(loop)
+    cleanup_task = asyncio.create_task(cleanup_evidence_task())
     logger.info("Starting IBVAP Backend with event_bus linked to main event loop")
     yield
     # Shutdown
     logger.info("Shutting down IBVAP Backend...")
+    cleanup_task.cancel()
     camera_manager.stop_all()
 
 app = FastAPI(title="IBVAP API", version="0.1.0", lifespan=lifespan)
 
-# CORS
+# CORS Configuration
+if settings.ENVIRONMENT == "production":
+    allowed_origins = [origin.strip() for origin in [settings.FRONTEND_URL] if origin.strip()]
+    if settings.ALLOWED_ORIGINS:
+        allowed_origins.extend([o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()])
+    allowed_origins = list(dict.fromkeys(allowed_origins))
+    if not allowed_origins:
+        allowed_origins = ["http://localhost:5173"]
+else:
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        settings.FRONTEND_URL.strip(),
+        "*"
+    ]
+    allowed_origins = list(dict.fromkeys([o for o in allowed_origins if o]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"], # Support Vite dev server
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Mount evidence static files
-app.mount("/api/v1/evidence", StaticFiles(directory="data/evidence"), name="evidence")
+app.mount("/api/v1/evidence", StaticFiles(directory=settings.EVIDENCE_DIR), name="evidence")
 
 import time
 @app.middleware("http")
@@ -70,5 +106,4 @@ app.include_router(incidents.router, prefix="/api/v1/incidents", tags=["incident
 
 if __name__ == "__main__":
     import uvicorn
-    from backend.app.core.config import settings
-    uvicorn.run("backend.app.main:app", host=settings.API_HOST, port=settings.API_PORT, reload=True)
+    uvicorn.run("backend.app.main:app", host=settings.API_HOST, port=settings.API_PORT, reload=(settings.ENVIRONMENT != "production"))

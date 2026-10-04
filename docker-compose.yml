@@ -1,36 +1,52 @@
-version: '3.8'
-
 services:
-  # Database Service
-  db:
-    image: postgres:15
-    container_name: nigrani_db
-    restart: always
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: ibvap
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  # Backend & AI Engine Service
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nigrani-backend:latest
     container_name: nigrani_backend
-    restart: always
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://admin:password@db:5432/ibvap
-      - ENVIRONMENT=production
-      # Map other .env variables here
-    volumes:
-      # Mount the data folder so uploaded videos and evidence persist outside the container
-      - ./data:/app/data
-    depends_on:
-      - db
+    restart: unless-stopped
 
-volumes:
-  postgres_data:
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+    environment:
+      ENVIRONMENT: production
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      LOGGING_LEVEL: ${LOGGING_LEVEL:-INFO}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+
+      # Video and camera pipeline
+      FRAME_QUEUE_SIZE: ${FRAME_QUEUE_SIZE:-30}
+      PROCESS_FPS: ${PROCESS_FPS:-10}
+
+      # YOLO Model
+      YOLO_MODEL: ${YOLO_MODEL:-/app/yolo11n.pt}
+      YOLO_CONFIDENCE: ${YOLO_CONFIDENCE:-0.40}
+      YOLO_IOU: ${YOLO_IOU:-0.45}
+      YOLO_DEVICE: ${YOLO_DEVICE:-cpu}
+      DETECTION_CLASSES: ${DETECTION_CLASSES:-person,car,motorcycle,bus,truck}
+
+      # Tracker
+      TRACKER_TYPE: ${TRACKER_TYPE:-bytetrack}
+
+      # AI Engines
+      VIRTUAL_FENCE_ENABLED: ${VIRTUAL_FENCE_ENABLED:-true}
+      ANPR_ENABLED: ${ANPR_ENABLED:-true}
+      FACE_RECOGNITION_ENABLED: ${FACE_RECOGNITION_ENABLED:-true}
+      LOITERING_ENABLED: ${LOITERING_ENABLED:-true}
+      NIGHT_MOVEMENT_ENABLED: ${NIGHT_MOVEMENT_ENABLED:-true}
+      CORRELATION_ENABLED: ${CORRELATION_ENABLED:-true}
+
+    volumes:
+      # Persistent storage: cameras.json, face_registry.json, fences.json, videos, and evidence
+      - ./data:/app/data
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health').read()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3

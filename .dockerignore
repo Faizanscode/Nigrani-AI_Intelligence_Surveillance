@@ -1,0 +1,39 @@
+# Version control
+.git/
+.gitignore
+
+# Virtual environment and python bytecode
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Tests and caches
+.pytest_cache/
+tests/
+outputs/
+docs/
+
+# Environment and secrets
+.env
+*.bak
+*.bak.*
+
+# Inference outputs and logs
+runs/
+*.log
+
+# Video files (mount via data/videos volume rather than baking into image)
+*.mp4
+*.avi
+*.mov
+*.mkv
+data/videos/*
+!data/videos/.gitkeep
+data/evidence/*
+!data/evidence/.gitkeep
+
+# Frontend build artifacts and node_modules
+node_modules/
+frontend/

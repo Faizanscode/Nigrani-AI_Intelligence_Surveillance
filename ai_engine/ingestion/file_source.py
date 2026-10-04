@@ -1,7 +1,10 @@
+import os
+from pathlib import Path
 import cv2
 import numpy as np
 from typing import Optional
 from ai_engine.ingestion.source import BaseVideoSource
+from backend.app.core.config import settings
 from backend.app.core.logger import get_logger
 
 logger = get_logger("FileVideoSource")
@@ -10,8 +13,49 @@ class FileVideoSource(BaseVideoSource):
     """Video source for pre-recorded local files (MP4, AVI, etc.)."""
 
     def __init__(self, source_id: str, url: str):
-        super().__init__(source_id, url.strip('"\''))
+        resolved_url = self._resolve_video_path(source_id, url)
+        super().__init__(source_id, resolved_url)
         self.cap = None
+
+    @classmethod
+    def _resolve_video_path(cls, source_id: str, raw_path: str) -> str:
+        """
+        Resolves Windows paths or relative container paths to the active video directory.
+        Checks:
+        1. Direct existence of path.
+        2. Extracted filename against data/videos, /app/data/videos, settings.VIDEOS_DIR.
+        """
+        if not raw_path:
+            return raw_path
+
+        cleaned = raw_path.strip().strip('"\'')
+        if os.path.exists(cleaned):
+            return cleaned
+
+        # Extract filename (handles both Windows C:\path\file.mp4 and Linux /path/file.mp4)
+        normalized = cleaned.replace("\\", "/")
+        filename = os.path.basename(normalized)
+
+        candidates = [
+            os.path.join(settings.VIDEOS_DIR, filename),
+            os.path.join("data", "videos", filename),
+            os.path.join("/app", "data", "videos", filename),
+            os.path.join("data", filename),
+            os.path.join("/app", "data", filename),
+            filename
+        ]
+
+        for cand in candidates:
+            if os.path.exists(cand):
+                logger.info(f"[{source_id}] Resolved video path '{raw_path}' -> '{cand}'")
+                return cand
+
+        # If not resolved yet, log helpful warning and fallback to cleaned
+        logger.warning(
+            f"[{source_id}] Video file not found directly at '{cleaned}'. "
+            f"If running in Docker, place video files in 'data/videos/' (or mounted at '/app/data/videos/')."
+        )
+        return cleaned
 
     def connect(self) -> bool:
         logger.info(f"[{self.source_id}] Connecting to file: {self.url}")

@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 from typing import List, Optional
@@ -21,7 +22,16 @@ class YOLODetector(BaseDetector):
     Object detector implementation using Ultralytics YOLO.
     """
     def __init__(self):
-        self.model_path = settings.YOLO_MODEL
+        raw_model = settings.YOLO_MODEL
+        if not os.path.isabs(raw_model):
+            if os.path.exists(raw_model):
+                self.model_path = os.path.abspath(raw_model)
+            elif os.path.exists(os.path.join("/app", raw_model)):
+                self.model_path = os.path.join("/app", raw_model)
+            else:
+                self.model_path = raw_model
+        else:
+            self.model_path = raw_model
         self.confidence = settings.YOLO_CONFIDENCE
         self.iou = settings.YOLO_IOU
         try:
