@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Database Service
+  db:
+    image: postgres:15
+    container_name: nigrani_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ibvap
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Backend & AI Engine Service
+  backend:
+    build: .
+    container_name: nigrani_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://admin:password@db:5432/ibvap
+      - ENVIRONMENT=production
+      # Map other .env variables here
+    volumes:
+      # Mount the data folder so uploaded videos and evidence persist outside the container
+      - ./data:/app/data
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
