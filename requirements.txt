@@ -1,4 +1,4 @@
-fastapi
+﻿fastapi
 uvicorn[standard]
 websockets
 opencv-python-headless
@@ -12,5 +12,4 @@ setuptools>=77.0.3,<81
 ultralytics
 lap>=0.5.12
 easyocr
-face-recognition
 

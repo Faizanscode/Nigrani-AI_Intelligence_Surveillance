@@ -6,6 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     YOLO_DEVICE=cpu \
     ENVIRONMENT=production
+    ENVIRONMENT=production \
+    FACE_RECOGNITION_ENABLED=false
 
 # Runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -16,7 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 RUN pip install --upgrade pip && \
