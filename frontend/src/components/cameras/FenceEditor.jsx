@@ -12,7 +12,7 @@ import { getFence, saveFence, deleteFence } from '../../services/api';
 import { Shield, Edit, Trash2, Undo2, X, Save, RotateCcw, MapPin, VideoOff } from 'lucide-react';
 import { displayToNormalized, normalizedToDisplay } from '../../utils/videoCoordinateUtils';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
 
 const FENCE_COLOR   = 'rgba(0, 230, 118, 0.90)';
 const FILL_COLOR    = 'rgba(0, 230, 118, 0.15)';
@@ -365,3 +365,4 @@ export default function FenceEditor({ cameraId, isOnline }) {
         </div>
     );
 }
+

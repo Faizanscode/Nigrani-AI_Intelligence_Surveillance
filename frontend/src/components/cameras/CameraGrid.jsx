@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchCameras, startCamera, stopCamera, deleteCamera } from '../../services/api';
+import { fetchCameras, startCamera, stopCamera, deleteCamera, addCamera } from '../../services/api';
 import { Link } from 'react-router-dom';
 import { Play, Square, Video, AlertCircle, Trash2, Activity } from 'lucide-react';
 import { wsService } from '../../services/websocket';
@@ -153,11 +153,7 @@ const CameraGrid = () => {
     const handleAddCamera = async (e) => {
         e.preventDefault();
         try {
-            await fetch('http://localhost:8000/api/v1/cameras', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newCamera)
-            });
+            await addCamera(newCamera);
             setShowAddModal(false);
             setNewCamera({ name: '', source: '', type: 'file' });
             load();
@@ -232,3 +228,5 @@ const CameraGrid = () => {
 };
 
 export default CameraGrid;
+
+
