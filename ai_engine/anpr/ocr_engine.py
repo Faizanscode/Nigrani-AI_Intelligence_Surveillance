@@ -25,7 +25,7 @@ class EasyOCREngine(BaseOCREngine):
 
     def __init__(self):
         self.validator = PlateValidator()
-        self._init_reader()
+        
 
     @classmethod
     def _init_reader(cls):
